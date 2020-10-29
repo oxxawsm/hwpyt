@@ -9,7 +9,7 @@ def encrypt_vigenere(plaintext: str, keyword: str) -> str:
     >>> encrypt_vigenere("ATTACKATDAWN", "LEMON")
     'LXFOPVEFRNHR'
     """
-    ciphertext = ""
+    ciphertext = ""                                             #можно было поступить аналогично с решением "шифра цезаря", но я решила поэкспериментировать
     count = 0
     while len(keyword) < len(plaintext):
         keyword += keyword
