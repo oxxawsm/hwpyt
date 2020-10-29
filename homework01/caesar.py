@@ -51,19 +51,17 @@ def decrypt_caesar(ciphertext: str, shift: int = 3) -> str:
     ''
     """
     plaintext = ""
-    count = 0
-    for i in plaintext:
-        count += 1
+    for i in ciphertext:
         if ord("A") <= ord(i) <= ord("Z"):
             key = ord(i) - (shift % 26)
-            if key > ord("A"):
+            if key < ord("A"):
                 key = ord("Z") + (key - 64)
                 plaintext += chr(key)
             else:
                 plaintext += chr(key)
         elif ord("a") <= ord(i) <= ord("z"):
             key = ord(i) - (shift % 26)
-            if key > ord("a"):
+            if key < ord("a"):
                 key = ord("z") + (key - 96)
                 plaintext += chr(key)
             else:
