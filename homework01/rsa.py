@@ -14,11 +14,11 @@ def is_prime(n: int) -> bool:
     False
     """
     deli = 2
-    if num == 1:
+    if n == 1:
         return False
-    while deli * deli <= num and num % deli != 0:
+    while deli * deli <= n and n % deli != 0:
         deli+=1
-    return deli * deli > num
+    return deli * deli > n
 
 
 def gcd(a: int, b: int) -> int:
