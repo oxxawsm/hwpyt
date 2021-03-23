@@ -168,3 +168,7 @@ class GameOfLife:
                 elif self.grid[x][y] == 1 and new_neigh in [2, 3]:
                     new_g[x][y] = 1
         return new_g
+
+    if __name__ == "__main__":
+        game = GameOfLife(320, 240, 20)
+        game.run()
