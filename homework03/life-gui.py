@@ -89,3 +89,7 @@ class GUI(UI):
      application = GUI(game)
      application.run()
         
+ 
+if __name__ == "__main__":
+    main()
+        
