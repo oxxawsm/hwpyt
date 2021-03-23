@@ -44,3 +44,8 @@ class Console(UI):
             
         screen.getch()
         curses.endwin()
+        
+if __name__ == "__main__":
+    life = GameOfLife((15, 30), randomize = True)
+    ui = Console(life, save_path=pathlib.Path("fileui.txt"))
+    ui.run()
