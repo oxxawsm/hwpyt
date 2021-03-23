@@ -37,7 +37,6 @@ class Console(UI):
             self.draw_borders(screen)
             self.draw_grid(screen)
             self.life.step()
-
             if self.life.max_generation_over:
                 running = False
             screen.refresh()
