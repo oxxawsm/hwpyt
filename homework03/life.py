@@ -104,3 +104,4 @@ class GameOfLife:
         with open(filename) as file:
             for row in self.curr_generation:
                 file.write(''.join([str(x) for x in row]))
+                file.write('\n')
