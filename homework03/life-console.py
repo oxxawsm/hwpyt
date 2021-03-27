@@ -1,7 +1,6 @@
 import curses
 import time
 import pathlib
-
 from life import GameOfLife
 from ui import UI
 
@@ -10,41 +9,32 @@ class Console(UI):
 
     def __init__(self, life: GameOfLife) -> None:
         super().__init__(life)
-        self.save_path = save_path
+        self.screen = curses.initscr()
 
     def draw_borders(self, screen) -> None:
         """ Отобразить рамку. """
-        screen.border(0)
+        self.screen.border(0)
 
-    def draw_grid(self, screen) -> None:
+    def draw_grid(self) -> None:
         """ Отобразить состояние клеток. """
-        for i in range(1, len(self.life.curr_generation) - 1):
-            for j in range(1, len(self.life.curr_generation[i]) - 1):
-                if self.life.curr_generation[i][j]:
-                    condit = '*'
-                else:
-                    condit = ' '
-                screen.addch(i, j, condit)
+        
+        for y, row in enumerate(self.life.curr_generation):
+            for x, value in enumerate(row):
+                self.sign = '*' if value == 1 else ''
+                self.screen.addch(x + 1, y + 1, self.sign) 
 
     def run(self) -> None:
-        screen = curses.initscr().derwin(
-            len(self.life.curr_generation), len(self.life.curr_generation[0]), 0, 0
-        )
-        curses.curs_set(0)
-        running = True
-        while running:
-            screen.clear()
-            self.draw_borders(screen)
-            self.draw_grid(screen)
-            self.life.step()
-            if self.life.max_generation_over:
-                running = False
-            screen.refresh()
-            
-        screen.getch()
+            self.draw_borders()
+            self.running = True
+            while self.running:
+                self.draw_borders()
+                self.draw_grid()
+                self.life.step()
+                self.screen.refresh()
+                time.sleep(1)
         curses.endwin()
         
 if __name__ == "__main__":
-    life = GameOfLife((15, 30), randomize = True)
-    ui = Console(life, save_path=pathlib.Path("fileui.txt"))
-    ui.run()
+    life = GameOfLife(size = (5,5), randomize = True)
+    console = Console(game)
+    console.run()
