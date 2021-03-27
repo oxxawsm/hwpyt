@@ -49,10 +49,10 @@ class GameOfLife:
         i1 = cell[0]
         j1 = cell[1]
         neighbours = []
-        for i in range(i1-1, i1+2):
-            for j in range(j1-1, j1+2):
-                if i>=0 and j>=0 and i<self.rows and j<self.cols:
-                    if i1==i and j1==j:
+        for i in range(i1 - 1, i1 + 2):
+            for j in range(j1 - 1, j1 + 2):
+                if i >= 0 and j >= 0 and i < self.rows and j < self.cols:
+                    if i1 == i and j1 == j:
                         None
                     else:
                         arr.append(gen[i][j])
@@ -65,15 +65,15 @@ class GameOfLife:
             for j in range(self.cols):
                 a = self.get_neighbours((i, j))
                 if gen[i][j] == 1:
-                    if (sum(a)<2 or sum(a)>3):
+                    if (sum(a) < 2 or sum(a) > 3):
                         new_gen[i][j] = 0
                     else:
                         new_gen[i][j] = 1
                 elif gen[i][j] == 0 and sum(a) == 3:
                     new_gen[i][j] = 1
                 else:
-                    new_gen[i][j]=gen[i][j]
-        self.curr_generation=new_g
+                    new_gen[i][j] = gen[i][j]
+        self.curr_generation = new_g
         return self.curr_generation
 
     def step(self) -> None:
