@@ -1,6 +1,6 @@
 import curses
 import time
-import pathlib
+from time import sleep
 from life import GameOfLife
 from ui import UI
 
@@ -20,7 +20,7 @@ class Console(UI):
         
         for y, row in enumerate(self.life.curr_generation):
             for x, value in enumerate(row):
-                self.sign = '*' if value == 1 else ''
+                self.sign = "*" if value == 1 else " "
                 self.screen.addch(x + 1, y + 1, self.sign) 
 
     def run(self) -> None:
@@ -35,6 +35,6 @@ class Console(UI):
         curses.endwin()
         
 if __name__ == "__main__":
-    life = GameOfLife(size = (5,5), randomize = True)
+    game = GameOfLife(size = (5,5), randomize=True)
     console = Console(game)
     console.run()
