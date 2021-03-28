@@ -1,5 +1,6 @@
 import pathlib
 import random
+from random import randint
 import typing as tp
 import pygame
 
@@ -29,20 +30,20 @@ class GameOfLife:
         self.generations = 1
 
     def create_grid(self, randomize: bool = False) -> Grid:
-        a = []
-        wt = self.rows
-        ht = self.cols
+        array = []
+        weight = self.rows
+        height = self.cols
         if randomize == True:
-            for i in range(wt):
-                a.append([])
-                for j in range(ht):
-                    a[i].append(random.randint(0, 1))
+            for i in range(weight):
+                array.append([])
+                for j in range(height):
+                    array[i].append(random.randint(0, 1))
         else:
-            for i in range(wt):
-                a.append([])
-                for j in range(ht):
-                    a[i].append(0)
-        return a
+            for i in range(weight):
+                array.append([])
+                for j in range(height):
+                    array[i].append(0)
+        return array
 
     def get_neighbours(self, cell: Cell) -> Cells:
         gen = self.curr_generation
@@ -55,7 +56,7 @@ class GameOfLife:
                     if i1 == i and j1 == j:
                         None
                     else:
-                        arr.append(gen[i][j])
+                        neighbours.append(gen[i][j])
         return neighbours
 
     def get_next_generation(self) -> Grid:
@@ -63,17 +64,17 @@ class GameOfLife:
         new_gen = [[0 for j in range(len(gen[i]))] for i in range(len(gen))]
         for i in range(self.rows):
             for j in range(self.cols):
-                a = self.get_neighbours((i, j))
+                arr = self.get_neighbours((i, j))
                 if gen[i][j] == 1:
-                    if (sum(a) < 2 or sum(a) > 3):
+                    if (sum(arr) < 2 or sum(arr) > 3):
                         new_gen[i][j] = 0
                     else:
                         new_gen[i][j] = 1
-                elif gen[i][j] == 0 and sum(a) == 3:
+                elif gen[i][j] == 0 and sum(arr) == 3:
                     new_gen[i][j] = 1
                 else:
                     new_gen[i][j] = gen[i][j]
-        self.curr_generation = new_g
+        self.curr_generation = new_gen
         return self.curr_generation
 
     def step(self) -> None:
