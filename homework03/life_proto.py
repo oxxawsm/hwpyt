@@ -1,7 +1,6 @@
 import copy
 import random
 import typing as tp
-
 import pygame
 from pygame.locals import *
 
@@ -32,6 +31,7 @@ class GameOfLife:
 
     def draw_lines(self) -> None:
         """ Отрисовать сетку """
+        
         for x in range(0, self.width, self.cell_size):
             pygame.draw.line(self.screen, pygame.Color("black"), (x, 0), (x, self.height))
         for y in range(0, self.height, self.cell_size):
@@ -39,11 +39,11 @@ class GameOfLife:
 
     def run(self) -> None:
         """ Запустить игру """
+        
         pygame.init()
         clock = pygame.time.Clock()
         pygame.display.set_caption("Game of Life")
         self.screen.fill(pygame.Color("white"))
-
         # Создание списка клеток
         self.grid = self.create_grid(True)
 
@@ -142,14 +142,14 @@ class GameOfLife:
         out : Grid
             Новое поколение клеток.
         """
-        self.next_generation = self.create_grid(randomize=False)
+        self.next_generation = self.create_grid(randomize = False)
         for x in range(self.cell_height):
             for y in range(self.cell_width):
                 new_nbr = self.get_neighbours((x, y)).count(1)
                 if self.grid[x][y] == 1 and new_nbr in [2, 3]:
-                    self.get_next_generation[x][y] = 1
+                    self.next_generation[x][y] = 1
                 elif self.grid[x][y] == 0 and new_nbr == 3:
-                    self.get_next_generation[x][y] = 1
+                    self.next_generation[x][y] = 1
                 else:
                     self.next_generation[x][y] = 0
         return self.next_generation
