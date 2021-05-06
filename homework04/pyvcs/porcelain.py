@@ -14,6 +14,8 @@ from pyvcs.refs import get_ref, is_detached, resolve_head, update_ref
 from pyvcs.tree import commit_tree, write_tree
 
 
+
+
 def add(gitdir: pathlib.Path, paths: tp.List[pathlib.Path]) -> None:
     for path in paths:
         add(gitdir, list(path.glob("*"))) if path.is_dir() else update_index(
@@ -21,6 +23,7 @@ def add(gitdir: pathlib.Path, paths: tp.List[pathlib.Path]) -> None:
         )
 
 
+        
 def commit(gitdir: pathlib.Path, message: str, author: tp.Optional[str] = None) -> str:
     return commit_tree(
         gitdir,
@@ -29,6 +32,7 @@ def commit(gitdir: pathlib.Path, message: str, author: tp.Optional[str] = None) 
         resolve_head(gitdir),
         author,
     )
+
 
 
 def checkout(gitdir: pathlib.Path, obj_name: str) -> None:
