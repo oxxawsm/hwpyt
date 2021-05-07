@@ -78,6 +78,7 @@ class GitIndexEntry(tp.NamedTuple):
         )
         return index_entry
 
+    
 
 def read_index(gitdir: pathlib.Path) -> tp.List[GitIndexEntry]:
     idx_entries = []
@@ -125,6 +126,7 @@ def write_index(gitdir: pathlib.Path, entries: tp.List[GitIndexEntry]) -> None:
         index_content += index_sha
         index_file.write(index_content)
 
+        
 
 def ls_files(gitdir: pathlib.Path, details: bool = False) -> None:
     idx_entries = read_index(gitdir)
@@ -139,6 +141,7 @@ def ls_files(gitdir: pathlib.Path, details: bool = False) -> None:
             print(f"{entry.name}")
 
 
+            
 def update_index(gitdir: pathlib.Path, paths: tp.List[pathlib.Path], write: bool = True) -> None:
     idx_entries: tp.List[GitIndexEntry] = []
     absolute_paths = [i.absolute() for i in paths]
