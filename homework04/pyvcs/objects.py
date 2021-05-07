@@ -11,75 +11,130 @@ from pyvcs.repo import repo_find
 
 
 def hash_object(data: bytes, fmt: str, write: bool = False) -> str:
-    fmt_data = (fmt + " " + str(len(data))).encode() + b"\00" + data
-    hash_sum = hashlib.sha1(fmt_data).hexdigest()
+    header = f"{fmt} {len(data)}\0".encode()
+    store = header + data
+    obj_hash = hashlib.sha1(store).hexdigest()
+    obj = zlib.compress(store)
     if write:
-        path = repo_find() / "objects" / hash_sum[:2]
-        pathlib.Path(path).mkdir(exist_ok=True)
-        with (path / hash_sum[2:]).open("wb") as f:
-            f.write(zlib.compress(fmt_data))
-    return hash_sum
+        gitdir = repo_find()
+        obj_dir = pathlib.Path(str(gitdir) + "/objects/" + obj_hash[:2])
+        if not obj_dir.is_dir():
+            os.makedirs(obj_dir)
+        obj_name = obj_dir / obj_hash[2:]
+        with open(obj_name, "wb") as obj_file:
+            obj_file.write(obj)
+    return obj_hash
 
 
 def resolve_object(obj_name: str, gitdir: pathlib.Path) -> tp.List[str]:
-    if (4 <= len(obj_name) <= 40) == False:
-        raise Exception("Not a valid object name %s" % (obj_name))
-    result = []
-    for file in (gitdir / "objects" / obj_name[:2]).glob(obj_name[2:] + "*"):
-        result.append(obj_name[:2] + file.name)
-    if len(result) == 0:
-        raise Exception("Not a valid object name %s" % (obj_name))
-    return result
+    if not 4 <= len(obj_name) <= 40:
+        raise Exception(f"Not a valid object name {obj_name}")
+    dir_name = obj_name[:2]
+    obj_file = obj_name[2:]
+    obj_dir = str(gitdir) + "/objects/" + dir_name
+    files_list = os.listdir(obj_dir)
+    objs = []
+    for obj in files_list:
+        if obj[: len(obj_file)] == obj_file:
+            objs.append(dir_name + obj)
+
+    if not objs:
+        raise Exception(f"Not a valid object name {obj_name}")
+
+    return objs
 
 
 def find_object(obj_name: str, gitdir: pathlib.Path) -> str:
-    return str(gitdir) + "/" + obj_name[:2] + "/" + obj_name[2:]
+    dir_name = obj_name[:2]
+    file_name = obj_name[2:]
+    path = str(gitdir) + "/" + dir_name + "/" + file_name
+    return path
 
 
 def read_object(sha: str, gitdir: pathlib.Path) -> tp.Tuple[str, bytes]:
-    data = zlib.decompress((gitdir / "objects" / sha[:2] / sha[2:]).open("rb").read())
-    return data.split(b" ")[0].decode(), data.split(b"\00", maxsplit=1)[1]
+    obj_name = resolve_object(sha, gitdir)[0]
+    assert len(resolve_object(sha, gitdir)) == 1
+    obj_dir = pathlib.Path(obj_name[:2])
+    obj_file_name = pathlib.Path(obj_name[2:])
+    path = gitdir / "objects" / obj_dir / obj_file_name
+    with open(path, "rb") as obj_file:
+        data = zlib.decompress(obj_file.read())
+    newline_pos = data.find(b"\x00")
+    header = data[:newline_pos]
+    space_pos = header.find(b" ")
+    obj_type = header[:space_pos].decode("ascii")
+    content_len = int(header[space_pos:newline_pos].decode("ascii"))
+    content = data[newline_pos + 1 :]
+    assert content_len == len(content)
+    return (obj_type, content)
 
 
 def read_tree(data: bytes) -> tp.List[tp.Tuple[int, str, str]]:
-    result = []
-    while data:
-        sha = data.index(b"\00")
-        mode, name = map(lambda x: x.decode(), data[:sha].split(b" "))
-        result.append((int(mode), data[sha + 1 : sha + 21].hex(), name))
-        data = data[sha + 21 :]
-    return result
+    tree_entries: tp.List[tp.Tuple[int, str, str]] = []
+    while len(data):
+        sha = bytes.hex(data[-20:])
+        data = data[:-21]
+        obj_type, _ = read_object(sha, repo_find())
+        space_pos = data.rfind(b" ")
+        name = data[space_pos + 1 :].decode("ascii")
+        data = data[:space_pos]
+        if obj_type == "tree":
+            mode = "40000"
+        else:
+            mode = data[-6:].decode("ascii")
+        mode_len = -1 * len(mode)
+        data = data[:mode_len]
+        mode_int = int(mode)
+        tree_entries.insert(0, (mode_int, sha, name))
+    return tree_entries
 
 
 def cat_file(obj_name: str, pretty: bool = True) -> None:
-    type, data = read_object(obj_name, repo_find())
-    if type in ("blob", "commit"):
-        print(data.decode())
-        return
-    for i in read_tree(data):
-        print(f"{i[0]:06}", "tree" if i[0] == 40000 else "blob", i[1] + "\t" + i[2])
-
-
-def find_tree_files(tree_sha: str, gitdir: pathlib.Path) -> tp.List[tp.Tuple[str, str]]:
-    result = []
-    header, data = read_object(tree_sha, gitdir)
-    for file in read_tree(data):
-        if read_object(file[2], gitdir)[0] == "tree":
-            result = [
-                (file[1] + "/" + blob[0], blob[1])
-                for blob in find_tree_files(file[2], gitdir)
-            ]
+    gitdir = repo_find()
+    obj_type, content = read_object(obj_name, gitdir)
+    if obj_type == "blob":
+        if pretty:
+            result = content.decode("ascii")
+            print(result)
         else:
-            result.append((file[1], file[2]))
-    return result
+            result = str(content)
+            print(result)
+    elif obj_type == "tree":
+        tree_entries = read_tree(content)
+        result = ""
+        for entry in tree_entries:
+            mode = str(entry[0])
+            if len(mode) != 6:
+                mode = "0" + mode
+            tree_pointer_type, _ = read_object(entry[1], gitdir)
+            print(f"{mode} {tree_pointer_type} {entry[1]}\t{entry[2]}")
+    else:
+        _, content = read_object(resolve_object(obj_name, repo_find())[0], repo_find())
+        print(content.decode())
+
+
+def find_tree_files(
+    tree_sha: str, gitdir: pathlib.Path, accumulator: str = ""
+) -> tp.List[tp.Tuple[str, str]]:
+
+    tree_files = []
+    _, tree = read_object(tree_sha, gitdir)
+    tree_entries = read_tree(tree)
+    for entry in tree_entries:
+        pointer_type, _ = read_object(entry[1], gitdir)
+        path = pathlib.Path(entry[2]).relative_to(gitdir.parent)
+        if path.is_dir():
+            accumulator += str(path) + "/"
+        if pointer_type == "tree":
+            tree_files += find_tree_files(entry[1], gitdir, accumulator)
+        else:
+            tree_files.append((entry[1], accumulator + str(path)))
+    return tree_files
 
 
 def commit_parse(raw: bytes, start: int = 0, dct=None):
-    data = {"message": []}  # type: ignore
-    for line in raw.decode().split("\n"):
-        if line.startswith(("tree", "parent", "author", "committer")):
-            name, value = line.split(" ", maxsplit=1)
-            data[str(name)] = value  # type: ignore
-        else:
-            data["message"].append(line)
-    return data
+    data = raw.decode("ascii")
+    data = data[5:]
+    author_pos = data.find("author")
+    tree = data[: author_pos - 2]
+    return tree

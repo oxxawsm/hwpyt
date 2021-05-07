@@ -2,36 +2,53 @@ import pathlib
 import typing as tp
 
 
-def update_ref(
-    gitdir: pathlib.Path, ref: tp.Union[str, pathlib.Path], new_value: str
-) -> None:
-    with (gitdir / ref).open("w") as file:
-        file.write(new_value)
+def update_ref(gitdir: pathlib.Path, ref: tp.Union[str, pathlib.Path], new_value: str) -> None:
+
+    with open(pathlib.Path(gitdir / ref), "w") as ref_file:
+        ref_file.write(new_value)
 
 
 def symbolic_ref(gitdir: pathlib.Path, name: str, ref: str) -> None:
-    with (gitdir / name).open("w") as file:
-        file.write("ref: " + ref)
+
+    with open(gitdir / name, "w") as ref_file:
+        ref_file.write(ref)
 
 
-def ref_resolve(gitdir: pathlib.Path, refname: str) -> tp.Optional[str]:
-    if refname == "HEAD" and not is_detached(gitdir):
-        return str(resolve_head(gitdir))
-    return (
-        str((gitdir / refname).open().read().strip())
-        if (gitdir / refname).exists()
-        else None
-    )
+def ref_resolve(gitdir: pathlib.Path, refname: str) -> str:
+
+    if refname == "HEAD":
+        refname = get_ref(gitdir)
+    if is_detached(gitdir):
+        return refname
+    with open(gitdir / pathlib.Path(refname), "r") as ref:
+        data = ref.read()
+    return data
 
 
 def resolve_head(gitdir: pathlib.Path) -> tp.Optional[str]:
-    return ref_resolve(gitdir, get_ref(gitdir))
+
+    refname = get_ref(gitdir)
+    if not (gitdir / pathlib.Path(refname)).exists():
+        return None
+    with open(gitdir / pathlib.Path(refname), "r") as ref:
+        data = ref.read()
+    return data
 
 
 def is_detached(gitdir: pathlib.Path) -> bool:
-    return True if get_ref(gitdir) == "" else False
+
+    with open(gitdir / "HEAD", "r") as head:
+        data = head.read()
+    if data[:3] == "ref":
+        return False
+
+    return True
 
 
 def get_ref(gitdir: pathlib.Path) -> str:
-    data = (gitdir / "HEAD").open().read().strip().split()
-    return data[1] if len(data) == 2 else ""
+    with open(gitdir / "HEAD", "r") as head:
+        if not is_detached(gitdir):
+            refname = head.read()[5:-1]
+        else:
+            refname = head.read()
+    return refname
